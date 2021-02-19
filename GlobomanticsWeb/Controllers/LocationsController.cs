@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GlobomanticsWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace GlobomanticsWeb.Controllers
@@ -14,10 +15,14 @@ namespace GlobomanticsWeb.Controllers
         private readonly static string COUNTRIES_KEY = "Globocations";
 
         private IMemoryCache countryCache;
+        private CosmosClient docClient;
+        private Microsoft.Azure.Cosmos.Container docContainer;
 
-        public LocationsController(IMemoryCache cache)
+        public LocationsController(IMemoryCache cache, CosmosClient client)
         {
             countryCache = cache;
+            docClient = client;
+            docContainer = docClient.GetContainer("m3globocdb","globolocations");
         }
         public async Task<IActionResult> Index()
         {
@@ -46,12 +51,13 @@ namespace GlobomanticsWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(LocationModel model)
+        public async Task<IActionResult> Add(LocationModel model)
         {
             if (ModelState.IsValid)
             {
                 //Add a new item to CosmosDB
-
+                model.Id = Guid.NewGuid().ToString();
+                await docContainer.CreateItemAsync(model, new PartitionKey(model.Country));
 
                 return RedirectToAction("index");
             }

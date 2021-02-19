@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,9 @@ namespace GlobomanticsWeb
             services.AddDbContext<Models.GloboDBContext>((opts) => {
                 opts.UseSqlServer(cnnString);
             });
+
+            var docClient = new CosmosClient(Configuration.GetConnectionString("CosmosDB"));
+            services.AddSingleton<CosmosClient>(docClient);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
