@@ -31,10 +31,17 @@ namespace GlobomanticsWeb.Controllers
             ViewData["CountriesList"] = countries;
 
             //get the list of all locations from CosmosDb
+            var locations = new List<LocationModel>();
 
+            var iterator = docContainer.GetItemQueryIterator<LocationModel>();
+            while (iterator.HasMoreResults)
+            {
+                var pageOfLocations = await iterator.ReadNextAsync();
+                locations.AddRange(pageOfLocations.ToList());
+            }
 
             //pass locations and countries
-            return View(null);
+            return View(locations);
         }
 
         private async Task<List<string>> GetCountriesListAsync()
@@ -70,11 +77,21 @@ namespace GlobomanticsWeb.Controllers
         }
 
         [HttpGet]
-        public IActionResult Search([FromQuery] string country)
+        public async Task<IActionResult> Search([FromQuery] string country)
         {
             //get all locations for a country
-
             var locations = new List<LocationModel>();
+
+            var iterator = docContainer.GetItemQueryIterator<LocationModel>(
+                requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(country) }
+                );
+            while (iterator.HasMoreResults)
+            {
+                var pageOfLocations = await iterator.ReadNextAsync();
+                locations.AddRange(pageOfLocations.ToList());
+            }
+
+            //pass locations and countries
             return View(locations);
         }
 
